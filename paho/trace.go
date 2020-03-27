@@ -122,6 +122,9 @@ func (t *SendStartTrace) done(err error) {
 }
 
 func matchPacketType(x interface{}) packets.PacketType {
+	if x == nil {
+		return 0
+	}
 	switch p := x.(type) {
 	case *packets.ControlPacket:
 		return p.FixedHeader.Type
