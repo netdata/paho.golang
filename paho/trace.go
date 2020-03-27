@@ -1,6 +1,8 @@
 package paho
 
-import "github.com/netdata/paho.golang/packets"
+import (
+	"github.com/netdata/paho.golang/packets"
+)
 
 type Trace struct {
 	OnSend    func(*SendStartTrace)
@@ -127,6 +129,9 @@ func matchPacketType(x interface{}) packets.PacketType {
 	}
 	switch p := x.(type) {
 	case *packets.ControlPacket:
+		if p == nil {
+			return 0
+		}
 		return p.FixedHeader.Type
 
 	case *packets.Connect:
