@@ -10,6 +10,7 @@ import (
 	"sync"
 	"time"
 
+	"github.com/davecgh/go-spew/spew"
 	"golang.org/x/sync/semaphore"
 
 	"github.com/netdata/paho.golang/packets"
@@ -701,7 +702,7 @@ func (c *Client) Subscribe(ctx context.Context, s *Subscribe) (*Suback, error) {
 	sa := SubackFromPacketSuback(sap.Content.(*packets.Suback))
 	switch {
 	case len(sa.Reasons) == 1:
-		c.logCtx(ctx, LevelTrace, fmt.Sprintf("SUBACK reasons: %+v", sa.Reasons))
+		c.logCtx(ctx, LevelTrace, spew.Sdump(sap, sa))
 		if sa.Reasons[0] >= 0x80 {
 			var reason string
 			c.logCtx(ctx, LevelDebug, fmt.Sprintf(
