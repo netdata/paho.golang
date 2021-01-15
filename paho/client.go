@@ -411,14 +411,11 @@ func (c *Client) reader() {
 		case packets.PINGRESP:
 			select {
 			case <-c.pingerDone:
-				// Pinger don't need anything no more.
 			case c.pong <- struct{}{}:
 			}
-
 		case packets.CONNACK:
 			cnnap := recv.Content.(*packets.Connack)
-			// NOTE: No need to acquire a lock for caCtx beacuse its never
-			// change.
+			// NOTE: No need to acquire a lock for caCtx because it never changes
 			if c.caCtx != nil {
 				c.caCtx.Return <- cnnap
 			}
@@ -465,17 +462,12 @@ func (c *Client) reader() {
 				return nil
 			}
 
-			// Its up to Router implementation to decide how it will process
-			// the packet (e.g. starting a new goroutine or block the receive
-			// loop).
 			if c.Router != nil {
-				c.Router.Route(pb, ack)
+				go c.Router.Route(pb, ack)
 			} else {
 				_ = ack()
 			}
-
 		case packets.PUBACK, packets.PUBCOMP, packets.SUBACK, packets.UNSUBACK:
-
 			if cpCtx := c.MIDs.Get(recv.PacketID()); cpCtx != nil {
 				c.MIDs.Free(recv.PacketID())
 				cpCtx.Return <- *recv
