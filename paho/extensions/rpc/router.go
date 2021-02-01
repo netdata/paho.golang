@@ -10,7 +10,7 @@ import (
 
 // MessageHandler is a type for a function that is invoked
 // by a Router when it has received a Publish.
-type MessageHandler func(*paho.Publish)
+type MessageHandler func(*paho.Publish, func() error)
 
 // Router is an interface of the functions for a struct that is
 // used to handle invoking MessageHandlers depending on the
@@ -62,7 +62,7 @@ func (r *StandardRouter) UnregisterHandler(topic string) {
 
 // Route is the library provided StandardRouter's implementation
 // of the required interface function()
-func (r *StandardRouter) Route(pb *packets.Publish) {
+func (r *StandardRouter) Route(pb *packets.Publish, ack func() error) {
 	r.RLock()
 	defer r.RUnlock()
 
@@ -84,7 +84,7 @@ func (r *StandardRouter) Route(pb *packets.Publish) {
 	for route, handlers := range r.subscriptions {
 		if match(route, topic) {
 			for _, handler := range handlers {
-				handler(m)
+				handler(m, ack)
 			}
 		}
 	}
@@ -166,7 +166,7 @@ func (s *SingleHandlerRouter) UnregisterHandler(topic string) {}
 
 // Route is the library provided SingleHandlerRouter's
 // implementation of the required interface function()
-func (s *SingleHandlerRouter) Route(pb *packets.Publish) {
+func (s *SingleHandlerRouter) Route(pb *packets.Publish, ack func() error) {
 	m := PublishFromPacketPublish(pb)
 
 	if pb.Properties.TopicAlias != nil {
@@ -178,7 +178,7 @@ func (s *SingleHandlerRouter) Route(pb *packets.Publish) {
 			m.Topic = t
 		}
 	}
-	s.handler(m)
+	s.handler(m, ack)
 }
 
 // PublishFromPacketPublish takes a packets library Publish and

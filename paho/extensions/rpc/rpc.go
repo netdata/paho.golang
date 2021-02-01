@@ -89,7 +89,8 @@ func (h *Handler) Request(pb *paho.Publish) (*paho.Publish, error) {
 	return resp, nil
 }
 
-func (h *Handler) responseHandler(pb *paho.Publish) {
+func (h *Handler) responseHandler(pb *paho.Publish, ack func() error) {
+	defer ack()
 	if pb.Properties == nil || pb.Properties.CorrelationData == nil {
 		return
 	}
