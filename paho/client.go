@@ -147,7 +147,7 @@ func NewClient(conf ClientConfig) *Client {
 		c.Persistence = &noopPersistence{}
 	}
 	if c.MIDs == nil {
-		c.MIDs = &MIDs{index: make(map[uint16]*CPContext)}
+		c.MIDs = &MIDs{index: make([]*CPContext, int(midMax))}
 	}
 	if c.PacketTimeout == 0 {
 		c.PacketTimeout = DefaultPacketTimeout
@@ -663,13 +663,14 @@ func (c *Client) Subscribe(ctx context.Context, s *Subscribe) (*Suback, error) {
 	cpCtx := &CPContext{subCtx, make(chan packets.ControlPacket, 1)}
 
 	sp := s.Packet()
-	var err error
-	sp.PacketID, err = c.MIDs.Request(cpCtx)
-
+	mid, err := c.MIDs.Request(cpCtx)
 	if err != nil {
 		return nil, err
 	}
+	defer c.MIDs.Free(mid)
+	sp.PacketID = mid
 
+	c.logCtx(ctx, LevelTrace, "sending SUBSCRIBE")
 	if err = c.write(ctx, sp); err != nil {
 		return nil, err
 	}
@@ -736,13 +737,14 @@ func (c *Client) Unsubscribe(ctx context.Context, u *Unsubscribe) (*Unsuback, er
 	cpCtx := &CPContext{unsubCtx, make(chan packets.ControlPacket, 1)}
 
 	up := u.Packet()
-	var err error
-	up.PacketID, err = c.MIDs.Request(cpCtx)
-
+	mid, err := c.MIDs.Request(cpCtx)
 	if err != nil {
 		return nil, err
 	}
+	defer c.MIDs.Free(mid)
+	up.PacketID = mid
 
+	c.logCtx(ctx, LevelTrace, "sending UNSUBSCRIBE")
 	if err = c.write(ctx, up); err != nil {
 		return nil, err
 	}
